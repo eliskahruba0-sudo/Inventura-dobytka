@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Inventura Dobytka 2025</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f0; color: #1a1a1a; font-size: 15px; }
+
+/* HEADER */
+.header { background: #2d6a2d; color: white; padding: 12px 16px 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.header h1 { font-size: 17px; font-weight: 700; }
+.header-sub { font-size: 11px; opacity: 0.8; margin-top: 1px; }
+.stats-bar { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.stat { background: rgba(255,255,255,0.18); border-radius: 10px; padding: 3px 9px; font-size: 12px; font-weight: 600; }
+.stat.ok { background: rgba(100,220,100,0.3); } .stat.warn { background: rgba(255,180,50,0.3); } .stat.bad { background: rgba(255,100,100,0.3); }
+.sync-status { font-size: 11px; margin-top: 4px; opacity: 0.85; }
+
+/* SETUP PANEL */
+.setup-panel { background: #fff8e1; border-bottom: 2px solid #f9a825; padding: 12px 16px; }
+.setup-panel h3 { font-size: 13px; font-weight: 700; color: #e65100; margin-bottom: 8px; }
+.setup-panel p { font-size: 12px; color: #555; margin-bottom: 8px; line-height: 1.5; }
+.setup-input { width: 100%; padding: 8px 10px; border: 1.5px solid #ccc; border-radius: 8px; font-size: 13px; margin-bottom: 6px; }
+.setup-btn { background: #1565c0; color: white; border: none; border-radius: 8px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; width: 100%; }
+.setup-btn:disabled { opacity: 0.5; }
+
+/* FILTERS */
+.filter-bar { background: white; border-bottom: 1px solid #e0e0e0; padding: 8px 12px; position: sticky; top: 80px; z-index: 99; }
+.filter-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.filter-row + .filter-row { margin-top: 6px; }
+.fb { padding: 5px 11px; border-radius: 14px; border: 1.5px solid #ccc; background: white; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.fb.active { background: #2d6a2d; color: white; border-color: #2d6a2d; }
+.fb.ales.active  { background: #1565c0; border-color: #1565c0; }
+.fb.pavel.active { background: #6a1f8a; border-color: #6a1f8a; }
+
+.search-wrap { padding: 8px 12px 0; background: white; }
+.search-input { width: 100%; padding: 8px 14px; border: 1.5px solid #ccc; border-radius: 20px; font-size: 15px; outline: none; }
+.search-input:focus { border-color: #2d6a2d; }
+
+/* TABS */
+.tabs { display: flex; background: white; border-bottom: 2px solid #e8e8e8; position: sticky; top: 160px; z-index: 98; }
+.tab { flex: 1; text-align: center; padding: 9px 4px; font-size: 12px; font-weight: 700; color: #888; cursor: pointer; border-bottom: 3px solid transparent; }
+.tab.active { color: #2d6a2d; border-bottom-color: #2d6a2d; }
+
+/* CARDS */
+.list { padding: 8px 10px 40px; }
+.card { background: white; border-radius: 12px; margin-bottom: 7px; border: 1.5px solid #e0e0e0; overflow: hidden; }
+.card-header { display: flex; align-items: center; padding: 9px 11px; cursor: pointer; gap: 8px; }
+.subj-badge { font-size: 10px; font-weight: 800; border-radius: 5px; padding: 2px 6px; flex-shrink: 0; }
+.subj-ales  { background: #e3f0ff; color: #1565c0; }
+.subj-pavel { background: #f3e5f5; color: #6a1f8a; }
+.ear-tag { font-weight: 800; font-size: 13px; border-radius: 7px; padding: 5px 7px; min-width: 62px; text-align: center; flex-shrink: 0; }
+.tag-f  { background: #ffe0b2; color: #5d3200; }
+.tag-m  { background: #b3e5fc; color: #01374d; }
+.animal-info { flex: 1; min-width: 0; }
+.animal-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
+.animal-sub  { font-size: 11px; color: #777; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.badges { display: flex; gap: 3px; flex-shrink: 0; align-items: center; }
+.ibadge { font-size: 13px; }
+.status-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.dot-ok { background: #43a047; } .dot-miss { background: #e53935; } .dot-none { background: #bdbdbd; }
+.chevron { color: #bbb; font-size: 17px; transition: transform 0.2s; }
+.card.open .chevron { transform: rotate(90deg); }
+
+.card-body { display: none; border-top: 1px solid #f0f0f0; padding: 12px; }
+.card.open .card-body { display: block; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+.info-item label { font-size: 10px; color: #999; font-weight: 700; text-transform: uppercase; display: block; }
+.info-item span  { font-size: 13px; color: #222; font-weight: 500; }
+.info-item.full { grid-column: span 2; }
+
+/* CHECKLIST */
+.check-section { background: #f9fbe7; border-radius: 10px; padding: 11px; }
+.check-section h3 { font-size: 11px; font-weight: 800; color: #558b2f; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.check-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.check-label { font-size: 13px; flex: 1; }
+.ctg { display: flex; gap: 4px; }
+.cb { padding: 6px 10px; border-radius: 7px; border: 1.5px solid #ccc; background: white; font-size: 12px; font-weight: 700; cursor: pointer; }
+.cb.ok { background: #43a047; color: white; border-color: #43a047; }
+.cb.nok { background: #e53935; color: white; border-color: #e53935; }
+.cb.missing { background: #fb8c00; color: white; border-color: #fb8c00; }
+.vzorku-input { width: 70px; padding: 6px 8px; border: 1.5px solid #ccc; border-radius: 7px; font-size: 14px; font-weight: 700; text-align: center; }
+.notes-input { width: 100%; margin-top: 8px; padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 13px; resize: none; height: 52px; font-family: inherit; }
+.save-btn { width: 100%; margin-top: 6px; background: #2d6a2d; color: white; border: none; border-radius: 9px; padding: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.saved-badge { text-align: center; font-size: 12px; margin-top: 5px; display: none; }
+.saved-ok  { color: #43a047; font-weight: 700; }
+.saved-err { color: #e53935; font-weight: 700; }
+
+/* EXPORT / PŘEHLED */
+.exp-panel { padding: 12px; }
+.exp-card { background: white; border-radius: 12px; padding: 14px; margin-bottom: 10px; border: 1.5px solid #e0e0e0; }
+.exp-card h3 { font-weight: 700; color: #2d6a2d; margin-bottom: 8px; font-size: 14px; }
+.sum-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.sum-table th { background: #e8f5e9; text-align: left; padding: 5px 7px; }
+.sum-table td { padding: 5px 7px; border-bottom: 1px solid #f5f5f5; }
+.prog-bar  { background: #e0e0e0; border-radius: 6px; height: 7px; margin-top: 8px; }
+.prog-fill { background: #43a047; border-radius: 6px; height: 7px; transition: width 0.4s; }
+.prog-label { font-size: 11px; color: #888; text-align: right; margin-top: 3px; }
+.exp-btn { background: #2d6a2d; color: white; border: none; border-radius: 8px; padding: 10px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 4px; }
+.exp-btn.blue { background: #1565c0; }
+.prob-row { font-size: 12px; padding: 4px 0; border-bottom: 1px solid #f5f5f5; }
+.krev-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.krev-table th { background: #fce4ec; padding: 5px 7px; text-align: left; }
+.krev-table td { padding: 5px 7px; border-bottom: 1px solid #f9f9f9; }
+.krev-table tr.done td { color: #43a047; }
+.empty { text-align: center; padding: 36px 20px; color: #bbb; font-size: 14px; }
+::-webkit-scrollbar { height: 3px; } ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+.loader { text-align: center; padding: 20px; color: #888; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🐄 Inventura Dobytka 2025</h1>
+  <div class="header-sub" id="date-disp"></div>
+  <div class="stats-bar" id="stats-bar"></div>
+  <div class="sync-status" id="sync-status"></div>
+</div>
+
+<!-- GOOGLE SHEETS SETUP -->
+<div class="setup-panel" id="setup-panel">
+  <h3>🔗 Propojení s Google Sheets — sdílené úložiště pro celý tým</h3>
+  <p>Data se vždy ukládají lokálně v prohlížeči. Pro sdílení v týmu (aby viděli všichni) je potřeba jednorázově nasadit Google Apps Script — trvá ~3 minuty:</p>
+  <div style="background:#fff;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;line-height:1.8;border:1px solid #f0c040">
+    <b>Krok 1:</b> Jděte na <a href="https://script.google.com" target="_blank" style="color:#1565c0">script.google.com</a> → <b>Nový projekt</b><br>
+    <b>Krok 2:</b> Smažte veškerý kód a vložte tento:<br>
+    <pre style="background:#f5f5f5;padding:8px;border-radius:6px;font-size:10px;overflow-x:auto;margin:6px 0;user-select:all">const SHEET_NAME = 'Inventura2025';
+
+function doGet(e) {
+  const id = e.parameter.sheetId;
+  const ss = SpreadsheetApp.openById(id);
+  let sh = ss.getSheetByName(SHEET_NAME);
+  if (!sh || sh.getLastRow() < 2) return ok([]);
+  const data = sh.getRange(2, 1, sh.getLastRow()-1, 7).getValues();
+  return ok(data.map(r => ({
+    cislo:r[0], videno:r[1], znamky:r[2], krev:r[3],
+    brezost:r[4], cisloVzorku:r[5], poznamka:r[6]
+  })));
+}
+
+function doPost(e) {
+  const d = JSON.parse(e.postData.contents);
+  const ss = SpreadsheetApp.openById(d.sheetId);
+  let sh = ss.getSheetByName(SHEET_NAME);
+  if (!sh) sh = ss.insertSheet(SHEET_NAME);
+  sh.clearContents();
+  sh.getRange(1,1,1,7).setValues([['cislo','videno','znamky','krev','brezost','cisloVzorku','poznamka']]);
+  if (d.rows && d.rows.length)
+    sh.getRange(2,1,d.rows.length,7).setValues(d.rows);
+  return ok('saved');
+}
+
+function ok(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ok:true, data}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+    <b>Krok 3:</b> Klikněte <b>Nasadit → Nové nasazení</b> → typ: <b>Webová aplikace</b><br>
+    → Spustit jako: <b>Já</b> → Přístup: <b>Kdokoli</b> → <b>Nasadit</b><br>
+    <b>Krok 4:</b> Zkopírujte URL nasazení (vypadá jako <code>https://script.google.com/macros/s/ABC.../exec</code>)<br>
+    <b>Krok 5:</b> Vložte URL níže spolu s ID vašeho Google Sheets
+  </div>
+  <input class="setup-input" id="as-url-input" type="text" placeholder="Apps Script URL: https://script.google.com/macros/s/.../exec">
+  <input class="setup-input" id="sheet-id-input" type="text" placeholder="Sheet ID (z URL mezi /d/ a /edit)">
+  <button class="setup-btn" onclick="connectSheet()">🔗 Připojit a načíst data</button>
+  <button class="setup-btn" style="background:#555;margin-top:6px" onclick="skipSetup()">Přeskočit — pracovat jen lokálně</button>
+  <div id="setup-msg" style="font-size:12px;margin-top:6px;"></div>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-row">
+    <button class="fb active"   id="fs-vse"   onclick="setSubj('vse')">Vše</button>
+    <button class="fb ales"     id="fs-ales"  onclick="setSubj('ales')">🔵 Aleš</button>
+    <button class="fb pavel"    id="fs-pavel" onclick="setSubj('pavel')">🟣 Pavel</button>
+  </div>
+  <div class="filter-row">
+    <button class="fb active" id="ft-vse"   onclick="setTyp('vse')">Vše</button>
+    <button class="fb"        id="ft-nezk"  onclick="setTyp('nezk')">❌ Nezkontr.</button>
+    <button class="fb"        id="ft-krev"  onclick="setTyp('krev')">🩸 Odběr krve</button>
+    <button class="fb"        id="ft-brez"  onclick="setTyp('brez')">🤰 Vhodné k telení</button>
+    <button class="fb"        id="ft-znam"  onclick="setTyp('znam')">🏷️ Probl. známky</button>
+  </div>
+</div>
+<div class="search-wrap">
+  <input class="search-input" type="search" id="search" placeholder="🔍  Hledat číslo, ušní číslo, plemeno..." oninput="renderList()">
+</div>
+<div class="tabs">
+  <div class="tab active" id="tab-list"   onclick="setTab('list')">📋 Seznam</div>
+  <div class="tab"        id="tab-krev"   onclick="setTab('krev')">🩸 Seznam krví</div>
+  <div class="tab"        id="tab-export" onclick="setTab('export')">📊 Přehled</div>
+</div>
+
+<div id="view-list"><div class="list" id="animal-list"></div></div>
+<div id="view-krev"   style="display:none"><div class="exp-panel" id="krev-panel"></div></div>
+<div id="view-export" style="display:none"><div class="exp-panel" id="exp-panel"></div></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// MASTER DATA (z portálu zemědělce)
+// ═══════════════════════════════════════════════
+const ANIMALS = [{"cislo":"CZ000144852971","usniciCislo":"CZ000144852971","pohlavi":"Samice","datNar":"2006-04-18","stari":"20 roků 0 měsíců","dniVeku":7304,"kategorie":"KRA","plemeno":"U - hereford","matka":"CZ000000891317","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000150198971","usniciCislo":"CZ000150198971","pohlavi":"Samice","datNar":"2008-02-10","stari":"18 roků 2 měsíců","dniVeku":6641,"kategorie":"KRA","plemeno":"X - jiná dojná plemena","matka":"CZ000119988708","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000150210971","usniciCislo":"CZ000150210971","pohlavi":"Samice","datNar":"2010-04-28","stari":"15 roků 11 měsíců","dniVeku":5833,"kategorie":"KRA","plemeno":"X - jiná dojná plemena","matka":"CZ000150198971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000199044971","usniciCislo":"CZ000199044971","pohlavi":"Samice","datNar":"2012-08-08","stari":"13 roků 8 měsíců","dniVeku":5000,"kategorie":"KRA","plemeno":"T - charolais","matka":"CZ000150205971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000199049971","usniciCislo":"CZ000199049971","pohlavi":"Samice","datNar":"2014-05-13","stari":"11 roků 11 měsíců","dniVeku":4357,"kategorie":"KRA","plemeno":"T - charolais","matka":"CZ000150205971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000262523971","usniciCislo":"CZ000262523971","pohlavi":"Samice","datNar":"2024-05-11","stari":"1 roků 11 měsíců","dniVeku":706,"kategorie":"J7-24M","plemeno":"SM - masný simentál","matka":"CZ000300574981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000262524971","usniciCislo":"CZ000262524971","pohlavi":"Samice","datNar":"2023-04-18","stari":"3 roků 0 měsíců","dniVeku":1095,"kategorie":"Jnad2R","plemeno":"C - české strakaté","matka":"CZ000313014971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000262525971","usniciCislo":"CZ000262525971","pohlavi":"Samice","datNar":"2024-05-11","stari":"1 roků 11 měsíců","dniVeku":706,"kategorie":"J7-24M","plemeno":"Y - limousin","matka":"CZ000413047981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000262528971","usniciCislo":"CZ000262528971","pohlavi":"Samice","datNar":"2023-04-17","stari":"3 roků 0 měsíců","dniVeku":1096,"kategorie":"Jnad2R","plemeno":"U - hereford","matka":"CZ000371401981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000262529971","usniciCislo":"CZ000262529971","pohlavi":"Samice","datNar":"2023-10-06","stari":"2 roků 6 měsíců","dniVeku":924,"kategorie":"Jnad2R","plemeno":"T - charolais","matka":"CZ000294389971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000262531971","usniciCislo":"CZ000262531971","pohlavi":"Samice","datNar":"2023-04-15","stari":"3 roků 0 měsíců","dniVeku":1098,"kategorie":"Jnad2R","plemeno":"T - charolais","matka":"CZ000371390981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000262532971","usniciCislo":"CZ000262532971","pohlavi":"Samice","datNar":"2023-04-16","stari":"3 roků 0 měsíců","dniVeku":1097,"kategorie":"Jnad2R","plemeno":"T - charolais","matka":"CZ000313017971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000262537971","usniciCislo":"CZ000262537971","pohlavi":"Samice","datNar":"2013-04-12","stari":"13 roků 0 měsíců","dniVeku":4753,"kategorie":"KRA","plemeno":"C - české strakaté","matka":"CZ000160017971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000272090971","usniciCislo":"CZ000272090971","pohlavi":"Samice","datNar":"2013-06-20","stari":"12 roků 10 měsíců","dniVeku":4684,"kategorie":"KRA","plemeno":"X - jiná dojná plemena","matka":"CZ000150198971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000272092971","usniciCislo":"CZ000272092971","pohlavi":"Samice","datNar":"2013-06-22","stari":"12 roků 10 měsíců","dniVeku":4682,"kategorie":"KRA","plemeno":"U - hereford","matka":"CZ000144852971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000272099971","usniciCislo":"CZ000272099971","pohlavi":"Samice","datNar":"2023-04-14","stari":"3 roků 0 měsíců","dniVeku":1099,"kategorie":"Jnad2R","plemeno":"U - hereford","matka":"CZ000371381981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000300562981","usniciCislo":"CZ000300562981","pohlavi":"Samice","datNar":"2015-04-28","stari":"10 roků 11 měsíců","dniVeku":4007,"kategorie":"KRA","plemeno":"T - charolais","matka":"CZ000132267981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000303325971","usniciCislo":"CZ000303325971","pohlavi":"Samice","datNar":"2023-04-18","stari":"3 roků 0 měsíců","dniVeku":1095,"kategorie":"Jnad2R","plemeno":"T - charolais","matka":"CZ000300562981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000303326971","usniciCislo":"CZ000303326971","pohlavi":"Samice","datNar":"2023-04-15","stari":"3 roků 0 měsíců","dniVeku":1098,"kategorie":"Jnad2R","plemeno":"SM - masný simentál","matka":"CZ000300574981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000303327971","usniciCislo":"CZ000303327971","pohlavi":"Samice","datNar":"2022-06-19","stari":"3 roků 10 měsíců","dniVeku":1398,"kategorie":"Jnad2R","plemeno":"U - hereford","matka":"CZ000371391981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000303328971","usniciCislo":"CZ000303328971","pohlavi":"Samice","datNar":"2024-05-12","stari":"1 roků 11 měsíců","dniVeku":705,"kategorie":"J7-24M","plemeno":"X - jiná dojná plemena","matka":"CZ000288010971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000303330971","usniciCislo":"CZ000303330971","pohlavi":"Samice","datNar":"2023-04-18","stari":"3 roků 0 měsíců","dniVeku":1095,"kategorie":"Jnad2R","plemeno":"T - charolais","matka":"CZ000367734981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000303334971","usniciCislo":"CZ000303334971","pohlavi":"Samice","datNar":"2022-05-27","stari":"3 roků 10 měsíců","dniVeku":1421,"kategorie":"Jnad2R","plemeno":"U - hereford","matka":"CZ000144852971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000303335971","usniciCislo":"CZ000303335971","pohlavi":"Samice","datNar":"2024-05-09","stari":"1 roků 11 měsíců","dniVeku":708,"kategorie":"J7-24M","plemeno":"U - hereford","matka":"CZ000144852971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000313017971","usniciCislo":"CZ000313017971","pohlavi":"Samice","datNar":"2018-04-21","stari":"7 roků 12 měsíců","dniVeku":2918,"kategorie":"KRA","plemeno":"T - charolais","matka":"CZ000162190971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000313019971","usniciCislo":"CZ000313019971","pohlavi":"Samice","datNar":"2019-04-22","stari":"6 roků 12 měsíců","dniVeku":2552,"kategorie":"KRA","plemeno":"C - české strakaté","matka":"CZ000150198971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000313020971","usniciCislo":"CZ000313020971","pohlavi":"Samice","datNar":"2019-04-25","stari":"6 roků 11 měsíců","dniVeku":2549,"kategorie":"KRA","plemeno":"T - charolais","matka":"CZ000162190971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000313021971","usniciCislo":"CZ000313021971","pohlavi":"Samice","datNar":"2019-04-25","stari":"6 roků 11 měsíců","dniVeku":2549,"kategorie":"KRA","plemeno":"C - české strakaté","matka":"CZ000199049971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000313022971","usniciCislo":"CZ000313022971","pohlavi":"Samice","datNar":"2019-04-23","stari":"6 roků 12 měsíců","dniVeku":2551,"kategorie":"KRA","plemeno":"X - jiná dojná plemena","matka":"CZ000150206971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000317207981","usniciCislo":"CZ000317207981","pohlavi":"Samice","datNar":"2016-08-16","stari":"9 roků 8 měsíců","dniVeku":3531,"kategorie":"KRA","plemeno":"Y - limousin","matka":"CZ000224549981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000317210981","usniciCislo":"CZ000317210981","pohlavi":"Samice","datNar":"2016-09-03","stari":"9 roků 7 měsíců","dniVeku":3513,"kategorie":"KRA","plemeno":"SM - masný simentál","matka":"CZ000101689981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000356600981","usniciCislo":"CZ000356600981","pohlavi":"Samice","datNar":"2017-12-23","stari":"8 roků 3 měsíců","dniVeku":3037,"kategorie":"KRA","plemeno":"Y - limousin","matka":"CZ000265398981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000367734981","usniciCislo":"CZ000367734981","pohlavi":"Samice","datNar":"2018-04-11","stari":"8 roků 0 měsíců","dniVeku":2928,"kategorie":"KRA","plemeno":"T - charolais","matka":"CZ000288316981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000371391981","usniciCislo":"CZ000371391981","pohlavi":"Samice","datNar":"2018-09-27","stari":"7 roků 6 měsíců","dniVeku":2759,"kategorie":"KRA","plemeno":"U - hereford","matka":"CZ000147625981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000371396981","usniciCislo":"CZ000371396981","pohlavi":"Samice","datNar":"2018-10-15","stari":"7 roků 6 měsíců","dniVeku":2741,"kategorie":"KRA","plemeno":"T - charolais","matka":"CZ000252775981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000371401981","usniciCislo":"CZ000371401981","pohlavi":"Samice","datNar":"2018-11-13","stari":"7 roků 5 měsíců","dniVeku":2712,"kategorie":"KRA","plemeno":"U - hereford","matka":"CZ000232806981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000388457971","usniciCislo":"CZ000388457971","pohlavi":"Samice","datNar":"2023-03-10","stari":"3 roků 1 měsíců","dniVeku":1134,"kategorie":"Jnad2R","plemeno":"C - české strakaté","matka":"CZ000317207981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000388466971","usniciCislo":"CZ000388466971","pohlavi":"Samice","datNar":"2023-04-14","stari":"3 roků 0 měsíců","dniVeku":1099,"kategorie":"Jnad2R","plemeno":"C - české strakaté","matka":"CZ000199049971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000388467971","usniciCislo":"CZ000388467971","pohlavi":"Samice","datNar":"2023-10-05","stari":"2 roků 6 měsíců","dniVeku":925,"kategorie":"Jnad2R","plemeno":"T - charolais","matka":"CZ000410997981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000388750981","usniciCislo":"CZ000388750981","pohlavi":"Samice","datNar":"2019-06-15","stari":"6 roků 10 měsíců","dniVeku":2498,"kategorie":"KRA","plemeno":"U - hereford","matka":"CZ000277617981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000388752981","usniciCislo":"CZ000388752981","pohlavi":"Samice","datNar":"2019-06-15","stari":"6 roků 10 měsíců","dniVeku":2498,"kategorie":"KRA","plemeno":"Y - limousin","matka":"CZ000302218981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000388763981","usniciCislo":"CZ000388763981","pohlavi":"Samice","datNar":"2019-08-16","stari":"6 roků 8 měsíců","dniVeku":2436,"kategorie":"KRA","plemeno":"T - charolais","matka":"CZ000318175981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000410997981","usniciCislo":"CZ000410997981","pohlavi":"Samice","datNar":"2020-04-10","stari":"6 roků 0 měsíců","dniVeku":2198,"kategorie":"KRA","plemeno":"T - charolais","matka":"CZ000201022981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000413047981","usniciCislo":"CZ000413047981","pohlavi":"Samice","datNar":"2020-08-23","stari":"5 roků 7 měsíců","dniVeku":2063,"kategorie":"KRA","plemeno":"Y - limousin","matka":"CZ000302219981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000471795971","usniciCislo":"CZ000471795971","pohlavi":"Samice","datNar":"2025-04-27","stari":"0 roků 11 měsíců","dniVeku":355,"kategorie":"J7-24M","plemeno":"T - charolais","matka":"CZ000300562981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000471796971","usniciCislo":"CZ000471796971","pohlavi":"Samice","datNar":"2025-04-03","stari":"1 roků 0 měsíců","dniVeku":379,"kategorie":"J7-24M","plemeno":"U - hereford","matka":"CZ000371391981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000471800971","usniciCislo":"CZ000471800971","pohlavi":"Samice","datNar":"2025-04-05","stari":"1 roků 0 měsíců","dniVeku":377,"kategorie":"J7-24M","plemeno":"C - české strakaté","matka":"CZ000262537971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000648989071","usniciCislo":"CZ000648989071","pohlavi":"Samec","datNar":"2022-03-28","stari":"4 roků 0 měsíců","dniVeku":1481,"kategorie":"Bnad2R","plemeno":"C - české strakaté","matka":"CZ000288010971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000648992071","usniciCislo":"CZ000648992071","pohlavi":"Samec","datNar":"2023-10-04","stari":"2 roků 6 měsíců","dniVeku":926,"kategorie":"Bnad2R","plemeno":"T - charolais","matka":"CZ000313020971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000648993071","usniciCislo":"CZ000648993071","pohlavi":"Samec","datNar":"2022-04-27","stari":"3 roků 11 měsíců","dniVeku":1451,"kategorie":"Bnad2R","plemeno":"T - charolais","matka":"CZ000371396981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000648994071","usniciCislo":"CZ000648994071","pohlavi":"Samec","datNar":"2021-06-10","stari":"4 roků 10 měsíců","dniVeku":1772,"kategorie":"Bnad2R","plemeno":"U - hereford","matka":"CZ000371381981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000648995071","usniciCislo":"CZ000648995071","pohlavi":"Samec","datNar":"2021-06-02","stari":"4 roků 10 měsíců","dniVeku":1780,"kategorie":"Bnad2R","plemeno":"C - české strakaté","matka":"CZ000272090971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000648996071","usniciCislo":"CZ000648996071","pohlavi":"Samec","datNar":"2021-06-07","stari":"4 roků 10 měsíců","dniVeku":1775,"kategorie":"Bnad2R","plemeno":"C - české strakaté","matka":"CZ000150206971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000648997071","usniciCislo":"CZ000648997071","pohlavi":"Samec","datNar":"2022-03-21","stari":"4 roků 0 měsíců","dniVeku":1488,"kategorie":"Bnad2R","plemeno":"C - české strakaté","matka":"CZ000150198971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000648998071","usniciCislo":"CZ000648998071","pohlavi":"Samec","datNar":"2022-03-25","stari":"4 roků 0 měsíců","dniVeku":1484,"kategorie":"Bnad2R","plemeno":"C - české strakaté","matka":"CZ000150206971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000648999071","usniciCislo":"CZ000648999071","pohlavi":"Samec","datNar":"2023-04-14","stari":"3 roků 0 měsíců","dniVeku":1099,"kategorie":"Bnad2R","plemeno":"T - charolais","matka":"CZ000388763981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000649000071","usniciCislo":"CZ000649000071","pohlavi":"Samec","datNar":"2023-04-17","stari":"3 roků 0 měsíců","dniVeku":1096,"kategorie":"Bnad2R","plemeno":"U - hereford","matka":"CZ000388750981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000649001071","usniciCislo":"CZ000649001071","pohlavi":"Samec","datNar":"2023-04-16","stari":"3 roků 0 měsíců","dniVeku":1097,"kategorie":"Bnad2R","plemeno":"T - charolais","matka":"CZ000162190971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000649003071","usniciCislo":"CZ000649003071","pohlavi":"Samec","datNar":"2023-04-17","stari":"3 roků 0 měsíců","dniVeku":1096,"kategorie":"Bnad2R","plemeno":"C - české strakaté","matka":"CZ000199044971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000649004071","usniciCislo":"CZ000649004071","pohlavi":"Samec","datNar":"2024-05-08","stari":"1 roků 11 měsíců","dniVeku":709,"kategorie":"B7-24M","plemeno":"X - jiná dojná plemena","matka":"CZ000272090971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000649005071","usniciCislo":"CZ000649005071","pohlavi":"Samec","datNar":"2025-04-27","stari":"0 roků 11 měsíců","dniVeku":355,"kategorie":"B7-24M","plemeno":"U - hereford","matka":"CZ000272092971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000658425071","usniciCislo":"CZ000658425071","pohlavi":"Samec","datNar":"2023-10-06","stari":"2 roků 6 měsíců","dniVeku":924,"kategorie":"Bnad2R","plemeno":"T - charolais","matka":"CZ000371396981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000702116071","usniciCislo":"CZ000702116071","pohlavi":"Samec","datNar":"2017-05-14","stari":"8 roků 11 měsíců","dniVeku":3260,"kategorie":"Bnad2R","plemeno":"C - české strakaté","matka":"CZ000262537971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000750909081","usniciCislo":"CZ000750909081","pohlavi":"Samec","datNar":"2019-12-25","stari":"6 roků 3 měsíců","dniVeku":2305,"kategorie":"Bnad2R","plemeno":"SM - masný simentál","matka":"CZ000296111981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000780755071","usniciCislo":"CZ000780755071","pohlavi":"Samec","datNar":"2023-04-15","stari":"3 roků 0 měsíců","dniVeku":1098,"kategorie":"Bnad2R","plemeno":"C - české strakaté","matka":"CZ000313019971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000780758071","usniciCislo":"CZ000780758071","pohlavi":"Samec","datNar":"2023-10-08","stari":"2 roků 6 měsíců","dniVeku":922,"kategorie":"Bnad2R","plemeno":"SM - masný simentál","matka":"CZ000313021971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000780759071","usniciCislo":"CZ000780759071","pohlavi":"Samec","datNar":"2023-10-09","stari":"2 roků 6 měsíců","dniVeku":921,"kategorie":"Bnad2R","plemeno":"C - české strakaté","matka":"CZ000356600981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000780760071","usniciCislo":"CZ000780760071","pohlavi":"Samec","datNar":"2023-10-07","stari":"2 roků 6 měsíců","dniVeku":923,"kategorie":"Bnad2R","plemeno":"C - české strakaté","matka":"CZ000313015971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000780766071","usniciCislo":"CZ000780766071","pohlavi":"Samec","datNar":"2023-11-04","stari":"2 roků 5 měsíců","dniVeku":895,"kategorie":"Bnad2R","plemeno":"U - hereford","matka":"CZ000272092971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000780768071","usniciCislo":"CZ000780768071","pohlavi":"Samec","datNar":"2019-11-07","stari":"6 roků 5 měsíců","dniVeku":2353,"kategorie":"Bnad2R","plemeno":"SM - masný simentál","matka":"CZ000199123981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000780769071","usniciCislo":"CZ000780769071","pohlavi":"Samec","datNar":"2024-05-08","stari":"1 roků 11 měsíců","dniVeku":709,"kategorie":"B7-24M","plemeno":"C - české strakaté","matka":"CZ000199049971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000866681071","usniciCislo":"CZ000866681071","pohlavi":"Samec","datNar":"2025-04-29","stari":"0 roků 11 měsíců","dniVeku":353,"kategorie":"B7-24M","plemeno":"C - české strakaté","matka":"CZ000272090971","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000866682071","usniciCislo":"CZ000866682071","pohlavi":"Samec","datNar":"2025-04-03","stari":"1 roků 0 měsíců","dniVeku":379,"kategorie":"B7-24M","plemeno":"U - hereford","matka":"CZ000371401981","subjekt":"Ales","provozovna":"CZ 71053129","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000300561981","usniciCislo":"CZ000300561981","pohlavi":"Samice","datNar":"2015-02-15","stari":"11 roků 2 měsíců","dniVeku":4079,"kategorie":"KRA","plemeno":"S - gasconne","matka":"CZ000224542981","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":10,"posledniKontrola":""},{"cislo":"CZ000303323971","usniciCislo":"CZ000303323971","pohlavi":"Samice","datNar":"2015-05-18","stari":"10 roků 11 měsíců","dniVeku":3987,"kategorie":"KRA","plemeno":"C - české strakaté","matka":"CZ000199045971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":9,"posledniKontrola":""},{"cislo":"CZ000312992971","usniciCislo":"CZ000312992971","pohlavi":"Samice","datNar":"2019-04-26","stari":"6 roků 11 měsíců","dniVeku":2548,"kategorie":"KRA","plemeno":"X - jiná dojná plemena","matka":"CZ000313013971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":1,"posledniKontrola":""},{"cislo":"CZ000313000971","usniciCislo":"CZ000313000971","pohlavi":"Samice","datNar":"2019-04-28","stari":"6 roků 11 měsíců","dniVeku":2546,"kategorie":"KRA","plemeno":"S - gasconne","matka":"CZ000300561981","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":4,"posledniKontrola":""},{"cislo":"CZ000313001971","usniciCislo":"CZ000313001971","pohlavi":"Samice","datNar":"2019-04-28","stari":"6 roků 11 měsíců","dniVeku":2546,"kategorie":"KRA","plemeno":"Y - limousin","matka":"CZ000300560981","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":12,"posledniKontrola":""},{"cislo":"CZ000313002971","usniciCislo":"CZ000313002971","pohlavi":"Samice","datNar":"2019-04-30","stari":"6 roků 11 měsíců","dniVeku":2544,"kategorie":"KRA","plemeno":"X - jiná dojná plemena","matka":"CZ000303323971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":7,"posledniKontrola":""},{"cislo":"CZ000313003971","usniciCislo":"CZ000313003971","pohlavi":"Samice","datNar":"2019-07-04","stari":"6 roků 9 měsíců","dniVeku":2479,"kategorie":"KRA","plemeno":"X - jiná dojná plemena","matka":"CZ000272095971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":5,"posledniKontrola":""},{"cislo":"CZ000313006971","usniciCislo":"CZ000313006971","pohlavi":"Samice","datNar":"2019-07-08","stari":"6 roků 9 měsíců","dniVeku":2475,"kategorie":"KRA","plemeno":"Y - limousin","matka":"CZ000132263981","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":8,"posledniKontrola":""},{"cislo":"CZ000313013971","usniciCislo":"CZ000313013971","pohlavi":"Samice","datNar":"2016-11-25","stari":"9 roků 4 měsíců","dniVeku":3430,"kategorie":"KRA","plemeno":"C - české strakaté","matka":"CZ000115661971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000388462971","usniciCislo":"CZ000388462971","pohlavi":"Samice","datNar":"2021-06-07","stari":"4 roků 10 měsíců","dniVeku":1775,"kategorie":"Jnad2R","plemeno":"T - charolais","matka":"CZ000367734981","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":6,"posledniKontrola":""},{"cislo":"CZ000388463971","usniciCislo":"CZ000388463971","pohlavi":"Samice","datNar":"2021-06-08","stari":"4 roků 10 měsíců","dniVeku":1774,"kategorie":"Jnad2R","plemeno":"C - české strakaté","matka":"CZ000300565981","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":3,"posledniKontrola":""},{"cislo":"CZ000388464971","usniciCislo":"CZ000388464971","pohlavi":"Samice","datNar":"2021-06-18","stari":"4 roků 10 měsíců","dniVeku":1764,"kategorie":"Jnad2R","plemeno":"SM - masný simentál","matka":"CZ000317210981","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":2,"posledniKontrola":""},{"cislo":"CZ000388465971","usniciCislo":"CZ000388465971","pohlavi":"Samice","datNar":"2021-06-14","stari":"4 roků 10 měsíců","dniVeku":1768,"kategorie":"Jnad2R","plemeno":"C - české strakaté","matka":"CZ000199049971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":11,"posledniKontrola":""},{"cislo":"CZ000388468971","usniciCislo":"CZ000388468971","pohlavi":"Samice","datNar":"2022-05-19","stari":"3 roků 11 měsíců","dniVeku":1429,"kategorie":"Jnad2R","plemeno":"U - hereford","matka":"CZ000272092971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000431994971","usniciCislo":"CZ000431994971","pohlavi":"Samice","datNar":"2022-04-17","stari":"4 roků 0 měsíců","dniVeku":1461,"kategorie":"Jnad2R","plemeno":"C - české strakaté","matka":"CZ000150207971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000431995971","usniciCislo":"CZ000431995971","pohlavi":"Samice","datNar":"2023-04-18","stari":"3 roků 0 měsíců","dniVeku":1095,"kategorie":"Jnad2R","plemeno":"C - české strakaté","matka":"CZ000303323971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000464430971","usniciCislo":"CZ000464430971","pohlavi":"Samice","datNar":"2025-04-05","stari":"1 roků 0 měsíců","dniVeku":377,"kategorie":"J7-24M","plemeno":"C - české strakaté","matka":"CZ000300561981","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000464431971","usniciCislo":"CZ000464431971","pohlavi":"Samice","datNar":"2025-04-27","stari":"0 roků 11 měsíců","dniVeku":355,"kategorie":"J7-24M","plemeno":"C - české strakaté","matka":"CZ000313003971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000464433971","usniciCislo":"CZ000464433971","pohlavi":"Samice","datNar":"2024-05-07","stari":"1 roků 11 měsíců","dniVeku":710,"kategorie":"J7-24M","plemeno":"SM - masný simentál","matka":"CZ000242271981","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000464435971","usniciCislo":"CZ000464435971","pohlavi":"Samice","datNar":"2023-10-04","stari":"2 roků 6 měsíců","dniVeku":926,"kategorie":"Jnad2R","plemeno":"C - české strakaté","matka":"CZ000313002971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":true,"vhodnaTeleni":true,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000857795071","usniciCislo":"CZ000857795071","pohlavi":"Samec","datNar":"2025-04-25","stari":"0 roků 11 měsíců","dniVeku":357,"kategorie":"B7-24M","plemeno":"C - české strakaté","matka":"CZ000313002971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000857796071","usniciCislo":"CZ000857796071","pohlavi":"Samec","datNar":"2024-05-09","stari":"1 roků 11 měsíců","dniVeku":708,"kategorie":"B7-24M","plemeno":"C - české strakaté","matka":"CZ000313013971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""},{"cislo":"CZ000857799071","usniciCislo":"CZ000857799071","pohlavi":"Samec","datNar":"2025-04-02","stari":"1 roků 0 měsíců","dniVeku":380,"kategorie":"B7-24M","plemeno":"C - české strakaté","matka":"CZ000312992971","subjekt":"Pavel","provozovna":"CZ 71021753","stado":"pocitat","potrebujeKrev":false,"vhodnaTeleni":false,"cisloVzorku":null,"posledniKontrola":""}];
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let checks = {};   // { cislo: {videno, znamky, krev, brezost, cisloVzorku, poznamka} }
+let sheetId = localStorage.getItem('sheetId') || '';
+let sheetConnected = false;
+let fSubj='vse', fTyp='vse', activeTab='list';
+let syncTimer = null;
+
+// Helper: build checks lookup map (cislo → base data cisloVzorku)
+const getC = c => checks[c] || {videno:null,znamky:null,krev:null,brezost:null,cisloVzorku:null,poznamka:''};
+const setC = (c,k,v) => { if(!checks[c]) checks[c]={...getC(c)}; checks[c][k]=v; };
+const isSamice = a => a.pohlavi.toLowerCase() === 'samice';
+
+// ═══════════════════════════════════════════════
+// GOOGLE SHEETS via APPS SCRIPT
+// ═══════════════════════════════════════════════
+let appsScriptUrl = localStorage.getItem('appsScriptUrl') || '';
+let sheetId       = localStorage.getItem('sheetId') || '';
+let sheetConnected = false;
+let syncTimer = null;
+
+function showSetupMsg(msg, color) {
+  const el = document.getElementById('setup-msg');
+  el.textContent = msg;
+  el.style.color = color === 'red' ? '#c62828' : color === 'ok' ? '#2d6a2d' : '#666';
+}
+function setSyncStatus(msg) {
+  document.getElementById('sync-status').textContent = msg;
+}
+
+function skipSetup() {
+  document.getElementById('setup-panel').style.display = 'none';
+  setSyncStatus('💾 Lokální režim — data uložena v prohlížeči');
+}
+
+async function connectSheet() {
+  const url = document.getElementById('as-url-input').value.trim();
+  const id  = document.getElementById('sheet-id-input').value.trim();
+  if (!url || !id) { showSetupMsg('❗ Vyplňte obě pole (Apps Script URL i Sheet ID)', 'red'); return; }
+  appsScriptUrl = url;
+  sheetId = id;
+  showSetupMsg('⏳ Připojuji...', 'gray');
+
+  const ok = await tryLoadFromSheet();
+  if (ok !== false) {
+    localStorage.setItem('appsScriptUrl', url);
+    localStorage.setItem('sheetId', id);
+    document.getElementById('setup-panel').style.display = 'none';
+    sheetConnected = true;
+    setSyncStatus('✅ Google Sheets připojen · ' + new Date().toLocaleTimeString('cs-CZ'));
+    updateStats(); renderList();
+  } else {
+    showSetupMsg('❌ Nepodařilo se připojit. Zkontrolujte: (1) URL Apps Scriptu je správná, (2) nasazení bylo "Kdokoli" a (3) Sheet ID je správné.', 'red');
+  }
+}
+
+async function tryLoadFromSheet() {
+  if (!appsScriptUrl || !sheetId) return false;
+  try {
+    const url = `${appsScriptUrl}?sheetId=${encodeURIComponent(sheetId)}`;
+    const resp = await fetch(url);
+    if (!resp.ok) return false;
+    const json = await resp.json();
+    if (!json.ok) return false;
+    // Merge server data into checks
+    (json.data || []).forEach(row => {
+      if (!row.cislo) return;
+      const n = v => (v && String(v).trim()) ? String(v).trim() : null;
+      checks[row.cislo] = {
+        videno:      n(row.videno),
+        znamky:      n(row.znamky),
+        krev:        n(row.krev),
+        brezost:     n(row.brezost),
+        cisloVzorku: n(row.cisloVzorku),
+        poznamka:    row.poznamka || '',
+      };
+    });
+    return true;
+  } catch(e) {
+    console.error('Load error:', e);
+    return false;
+  }
+}
+
+async function saveToSheet() {
+  // Always save locally first
+  localStorage.setItem('inventura_checks', JSON.stringify(checks));
+
+  if (!appsScriptUrl || !sheetId) {
+    setSyncStatus('💾 Uloženo lokálně');
+    return;
+  }
+  try {
+    setSyncStatus('⏳ Ukládám do Sheets...');
+    const rows = ANIMALS.map(a => {
+      const c = getC(a.cislo);
+      return [a.cislo, c.videno||'', c.znamky||'', c.krev||'', c.brezost||'', c.cisloVzorku||'', c.poznamka||''];
+    });
+    const resp = await fetch(appsScriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({ sheetId, rows }),
+    });
+    const json = await resp.json();
+    if (json.ok) {
+      setSyncStatus('✅ Sheets: uloženo ' + new Date().toLocaleTimeString('cs-CZ'));
+    } else {
+      setSyncStatus('⚠️ Sheets: chyba — data uložena lokálně');
+    }
+  } catch(e) {
+    setSyncStatus('⚠️ Offline — data uložena lokálně');
+  }
+}
+
+function scheduleSave() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(saveToSheet, 1500);
+}
+
+function loadLocal() {
+  const saved = localStorage.getItem('inventura_checks');
+  if (saved) { try { checks = JSON.parse(saved); } catch(e) {} }
+  // Seed base blood sample numbers from ANIMALS master data
+  ANIMALS.forEach(a => {
+    if (a.cisloVzorku != null) {
+      if (!checks[a.cislo]) checks[a.cislo] = {videno:null,znamky:null,krev:null,brezost:null,cisloVzorku:null,poznamka:''};
+      if (!checks[a.cislo].cisloVzorku) checks[a.cislo].cisloVzorku = String(a.cisloVzorku);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// FILTER / RENDER
+// ═══════════════════════════════════════════════
+function getFiltered() {
+  let list = [...ANIMALS];
+  if      (fSubj==='ales')  list=list.filter(a=>a.subjekt==='Ales');
+  else if (fSubj==='pavel') list=list.filter(a=>a.subjekt==='Pavel');
+  if (fTyp==='nezk') list=list.filter(a=>!getC(a.cislo).videno);
+  if (fTyp==='krev') list=list.filter(a=>a.potrebujeKrev);
+  if (fTyp==='brez') list=list.filter(a=>a.vhodnaTeleni);
+  if (fTyp==='znam') list=list.filter(a=>getC(a.cislo).znamky && getC(a.cislo).znamky!=='ok');
+  const q=(document.getElementById('search')?.value||'').toLowerCase();
+  if(q) list=list.filter(a=>a.cislo.toLowerCase().includes(q)||a.usniciCislo.toLowerCase().includes(q)||(a.plemeno||'').toLowerCase().includes(q)||(a.matka||'').includes(q));
+  return list;
+}
+
+function setSubj(v){ fSubj=v; ['vse','ales','pavel'].forEach(x=>document.getElementById('fs-'+x)?.classList.toggle('active',x===v)); renderList(); updateStats(); }
+function setTyp(v) { fTyp=v; ['vse','nezk','krev','brez','znam'].forEach(x=>document.getElementById('ft-'+x)?.classList.toggle('active',x===v)); renderList(); }
+function setTab(v) {
+  activeTab=v;
+  ['list','krev','export'].forEach(x=>{
+    document.getElementById('tab-'+x)?.classList.toggle('active',x===v);
+    document.getElementById('view-'+x).style.display = x===v ? 'block':'none';
+  });
+  if(v==='krev')   renderKrevPanel();
+  if(v==='export') renderExport();
+}
+
+function updateStats(){
+  const base=ANIMALS;
+  const videno=base.filter(a=>getC(a.cislo).videno==='ok').length;
+  const kTot=base.filter(a=>a.potrebujeKrev).length;
+  const kOk=base.filter(a=>a.potrebujeKrev&&getC(a.cislo).krev==='ok').length;
+  const miss=base.filter(a=>getC(a.cislo).videno==='nenalezeno').length;
+  document.getElementById('stats-bar').innerHTML=`
+    <span class="stat ok">✅ ${videno}/${base.length}</span>
+    <span class="stat warn">🩸 ${kOk}/${kTot}</span>
+    ${miss?`<span class="stat bad">❌ ${miss} chybí</span>`:''}`;
+}
+
+function toggleCard(c){ document.getElementById('card-'+c)?.classList.toggle('open'); }
+
+function setBtn(c,field,val,el){
+  const prev=getC(c)[field], nv=prev===val?null:val;
+  setC(c,field,nv);
+  el.closest('.ctg').querySelectorAll('.cb').forEach(b=>{
+    b.className='cb'; const bv=b.getAttribute('data-v');
+    if(bv===nv) b.classList.add(bv==='ok'?'ok':bv==='nok'?'nok':'missing');
+  });
+  const dot=document.getElementById('dot-'+c);
+  if(dot){ const ch=getC(c); dot.className='status-dot '+(ch.videno==='ok'?'dot-ok':ch.videno==='nenalezeno'?'dot-miss':'dot-none'); }
+  updateStats();
+  scheduleSave();
+}
+
+function saveCard(c){
+  const vz = document.getElementById('vz-'+c)?.value?.trim();
+  const note = document.getElementById('note-'+c)?.value||'';
+  setC(c,'cisloVzorku', vz||null);
+  setC(c,'poznamka', note);
+  scheduleSave();
+  const b=document.getElementById('saved-'+c);
+  if(b){b.className='saved-badge saved-ok';b.textContent='✅ Uloženo';b.style.display='block';setTimeout(()=>b.style.display='none',2500);}
+}
+
+function renderList(){
+  const list=getFiltered();
+  const el=document.getElementById('animal-list');
+  if(!list.length){el.innerHTML='<div class="empty">Žádná zvířata</div>';return;}
+  el.innerHTML=list.map(a=>{
+    const c=getC(a.cislo);
+    const sf=isSamice(a);
+    const tagCls=sf?'tag-f':'tag-m';
+    const dotCls=c.videno==='ok'?'dot-ok':c.videno==='nenalezeno'?'dot-miss':'dot-none';
+    const subjCls=a.subjekt==='Ales'?'subj-ales':'subj-pavel';
+    const subjLbl=a.subjekt==='Ales'?'ALEŠ':'PAVEL';
+    const plShort=(a.plemeno||'').split(' - ')[0]||'–';
+    const vzorku = c.cisloVzorku || (a.cisloVzorku ? String(a.cisloVzorku) : null);
+    return `<div class="card" id="card-${a.cislo}">
+      <div class="card-header" onclick="toggleCard('${a.cislo}')">
+        <span class="subj-badge ${subjCls}">${subjLbl}</span>
+        <div class="ear-tag ${tagCls}">${a.cislo.slice(-9,-3)}</div>
+        <div class="animal-info">
+          <div class="animal-name">${a.usniciCislo}</div>
+          <div class="animal-sub">${a.pohlavi} · ${plShort} · ${a.stari}${vzorku?' · 🩸 č.'+vzorku:''}</div>
+        </div>
+        <div class="badges">
+          ${a.potrebujeKrev?'<span class="ibadge">🩸</span>':''}
+          ${a.vhodnaTeleni&&sf?'<span class="ibadge">🐄</span>':''}
+        </div>
+        <div class="status-dot ${dotCls}" id="dot-${a.cislo}"></div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="card-body">
+        <div class="info-grid">
+          <div class="info-item"><label>Celé ušní číslo</label><span>${a.usniciCislo}</span></div>
+          <div class="info-item"><label>Pohlaví / Kategorie</label><span>${a.pohlavi} · ${a.kategorie}</span></div>
+          <div class="info-item"><label>Datum nar.</label><span>${a.datNar}</span></div>
+          <div class="info-item"><label>Stáří</label><span>${a.stari}</span></div>
+          <div class="info-item"><label>Plemeno</label><span>${a.plemeno||'–'}</span></div>
+          <div class="info-item"><label>Provozovna</label><span>${a.provozovna}</span></div>
+          <div class="info-item full"><label>Matka</label><span>${a.matka||'–'}</span></div>
+        </div>
+        <div class="check-section">
+          <h3>📋 Kontrola ${new Date().toLocaleDateString('cs-CZ')}</h3>
+          <div class="check-row"><span class="check-label">👁️ Viděno</span>
+            <div class="ctg">
+              <button class="cb ${c.videno==='ok'?'ok':''}" data-v="ok" onclick="setBtn('${a.cislo}','videno','ok',this)">OK</button>
+              <button class="cb ${c.videno==='nenalezeno'?'nok':''}" data-v="nenalezeno" onclick="setBtn('${a.cislo}','videno','nenalezeno',this)">Chybí</button>
+            </div></div>
+          <div class="check-row"><span class="check-label">🏷️ Ušní známky</span>
+            <div class="ctg">
+              <button class="cb ${c.znamky==='ok'?'ok':''}" data-v="ok" onclick="setBtn('${a.cislo}','znamky','ok',this)">OK</button>
+              <button class="cb ${c.znamky==='chybi'?'missing':''}" data-v="chybi" onclick="setBtn('${a.cislo}','znamky','chybi',this)">Chybí</button>
+              <button class="cb ${c.znamky==='jedna'?'missing':''}" data-v="jedna" onclick="setBtn('${a.cislo}','znamky','jedna',this)">1 ks</button>
+            </div></div>
+          ${a.potrebujeKrev?`<div class="check-row"><span class="check-label">🩸 Odběr krve</span>
+            <div class="ctg">
+              <button class="cb ${c.krev==='ok'?'ok':''}" data-v="ok" onclick="setBtn('${a.cislo}','krev','ok',this)">Odebráno</button>
+              <button class="cb ${c.krev==='nok'?'nok':''}" data-v="nok" onclick="setBtn('${a.cislo}','krev','nok',this)">Neodebráno</button>
+            </div></div>
+          <div class="check-row"><span class="check-label">🔢 Číslo vzorku</span>
+            <input class="vzorku-input" id="vz-${a.cislo}" type="number" min="1" value="${vzorku||''}" placeholder="č.">
+          </div>`:''}
+          ${a.vhodnaTeleni&&sf?`<div class="check-row"><span class="check-label">🐄 Březost / Telení</span>
+            <div class="ctg">
+              <button class="cb ${c.brezost==='brezna'?'ok':''}" data-v="brezna" onclick="setBtn('${a.cislo}','brezost','brezna',this)">Březí</button>
+              <button class="cb ${c.brezost==='ma_tele'?'ok':''}" data-v="ma_tele" onclick="setBtn('${a.cislo}','brezost','ma_tele',this)">Má tele</button>
+              <button class="cb ${c.brezost==='prazdna'?'nok':''}" data-v="prazdna" onclick="setBtn('${a.cislo}','brezost','prazdna',this)">Prázdná</button>
+              <button class="cb ${c.brezost==='?'?'missing':''}" data-v="?" onclick="setBtn('${a.cislo}','brezost','?',this)">?</button>
+            </div></div>`:''}
+          <textarea class="notes-input" id="note-${a.cislo}" placeholder="Poznámka...">${c.poznamka||''}</textarea>
+          <button class="save-btn" onclick="saveCard('${a.cislo}')">💾 Uložit</button>
+          <div class="saved-badge" id="saved-${a.cislo}"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// KREV PANEL — printable list per subjekt
+// ═══════════════════════════════════════════════
+function renderKrevPanel(){
+  const panel = document.getElementById('krev-panel');
+  ['Ales','Pavel'].forEach(subj => {
+    const prov = subj==='Ales' ? 'CZ 71053129' : 'CZ 71021753';
+    const kusy = ANIMALS.filter(a=>a.subjekt===subj&&a.potrebujeKrev).sort((a,b)=>{
+      const av = parseInt(getC(a.cislo).cisloVzorku||a.cisloVzorku||999);
+      const bv = parseInt(getC(b.cislo).cisloVzorku||b.cisloVzorku||999);
+      return av-bv;
+    });
+    const rows = kusy.map(a=>{
+      const c=getC(a.cislo);
+      const vz = c.cisloVzorku || (a.cisloVzorku ? String(a.cisloVzorku) : '');
+      const done = c.krev==='ok';
+      return `<tr class="${done?'done':''}">
+        <td>${vz||'<span style="color:#e53935">❓</span>'}</td>
+        <td>${a.usniciCislo}</td>
+        <td>${a.provozovna}</td>
+        <td>${done?'✅':''}</td>
+      </tr>`;
+    }).join('');
+    panel.innerHTML += `<div class="exp-card">
+      <h3>🩸 Odběr krve — ${subj==='Ales'?'Aleš':subj} (${prov})</h3>
+      <p style="font-size:12px;color:#666;margin-bottom:8px">Celkem ${kusy.length} kusů · odebráno: ${kusy.filter(a=>getC(a.cislo).krev==='ok').length}</p>
+      <table class="krev-table">
+        <tr><th>#</th><th>Číslo zvířete</th><th>Provozovna</th><th>✅</th></tr>
+        ${rows}
+      </table>
+      <button class="exp-btn" style="margin-top:10px" onclick="printKrev('${subj}')">🖨️ Tisknout / PDF</button>
+    </div>`;
+  });
+}
+
+function printKrev(subj){
+  const w=window.open('','_blank');
+  const prov = subj==='Ales'?'CZ 71053129':'CZ 71021753';
+  const kusy=ANIMALS.filter(a=>a.subjekt===subj&&a.potrebujeKrev).sort((a,b)=>{
+    const av=parseInt(getC(a.cislo).cisloVzorku||a.cisloVzorku||999);
+    const bv=parseInt(getC(b.cislo).cisloVzorku||b.cisloVzorku||999);
+    return av-bv;
+  });
+  const rows=kusy.map(a=>{
+    const vz=getC(a.cislo).cisloVzorku||a.cisloVzorku||'';
+    return `<tr><td>${vz}</td><td>${a.usniciCislo}</td><td>${a.provozovna}</td></tr>`;
+  }).join('');
+  w.document.write(`<html><head><title>Vzorky krve - ${subj}</title>
+  <style>body{font-family:Arial;font-size:13px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:6px 10px}th{background:#fce4ec}</style></head>
+  <body><h2>Vzorek krve - ${subj==='Ales'?'Aleš':subj} (${prov})</h2>
+  <p>Datum: ${new Date().toLocaleDateString('cs-CZ')}</p>
+  <table><tr><th>Vzorek krve</th><th>Číslo zvířete</th><th>Provozovna</th></tr>${rows}</table>
+  <script>window.print();<\/script></body></html>`);
+}
+
+// ═══════════════════════════════════════════════
+// EXPORT / PŘEHLED
+// ═══════════════════════════════════════════════
+function renderExport(){
+  const base=ANIMALS;
+  const videno=base.filter(a=>getC(a.cislo).videno==='ok');
+  const missing=base.filter(a=>getC(a.cislo).videno==='nenalezeno');
+  const kTot=base.filter(a=>a.potrebujeKrev), kOk=kTot.filter(a=>getC(a.cislo).krev==='ok');
+  const brezne=base.filter(a=>getC(a.cislo).brezost==='brezna');
+  const matele=base.filter(a=>getC(a.cislo).brezost==='ma_tele');
+  const prazdne=base.filter(a=>getC(a.cislo).brezost==='prazdna');
+  const znam=base.filter(a=>getC(a.cislo).znamky&&getC(a.cislo).znamky!=='ok');
+  const pct=Math.round(videno.length/base.length*100)||0;
+  const sc=(arr,s)=>arr.filter(a=>a.subjekt===s);
+
+  document.getElementById('exp-panel').innerHTML=`
+    <div class="exp-card">
+      <h3>📊 Stav inventury</h3>
+      <table class="sum-table">
+        <tr><th></th><th style="color:#1565c0">Aleš</th><th style="color:#6a1f8a">Pavel</th><th>Celkem</th></tr>
+        <tr><td>Celkem ks</td><td>${sc(base,'Ales').length}</td><td>${sc(base,'Pavel').length}</td><td>${base.length}</td></tr>
+        <tr><td>✅ Viděno</td><td>${sc(videno,'Ales').length}</td><td>${sc(videno,'Pavel').length}</td><td>${videno.length}</td></tr>
+        <tr><td>❌ Nenalezeno</td><td>${sc(missing,'Ales').length}</td><td>${sc(missing,'Pavel').length}</td><td>${missing.length}</td></tr>
+        <tr><td>🩸 Krev odebráno</td><td>${sc(kOk,'Ales').length}/${sc(kTot,'Ales').length}</td><td>${sc(kOk,'Pavel').length}/${sc(kTot,'Pavel').length}</td><td>${kOk.length}/${kTot.length}</td></tr>
+        <tr><td>🐄 Březích</td><td colspan="2"></td><td>${brezne.length}</td></tr>
+        <tr><td>🐄 Má tele</td><td colspan="2"></td><td>${matele.length}</td></tr>
+        <tr><td>⚪ Prázdných</td><td colspan="2"></td><td>${prazdne.length}</td></tr>
+        <tr><td>🏷️ Prob. známky</td><td colspan="2"></td><td>${znam.length}</td></tr>
+      </table>
+      <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <div class="prog-label">${pct}% zkontrolováno</div>
+    </div>
+    ${missing.length?`<div class="exp-card"><h3>❌ Nenalezená (${missing.length})</h3>
+      ${missing.map(a=>`<div class="prob-row"><b>${a.cislo.slice(-9,-3)}</b> ${a.usniciCislo} · <b style="color:${a.subjekt==='Ales'?'#1565c0':'#6a1f8a'}">${a.subjekt}</b>${getC(a.cislo).poznamka?' — '+getC(a.cislo).poznamka:''}</div>`).join('')}
+    </div>`:''}
+    ${znam.length?`<div class="exp-card"><h3>🏷️ Prob. se známkami (${znam.length})</h3>
+      ${znam.map(a=>`<div class="prob-row"><b>${a.usniciCislo}</b> · ${getC(a.cislo).znamky}</div>`).join('')}
+    </div>`:''}
+    <div class="exp-card"><h3>🐄 Vhodné k telení — s matkami</h3>
+      <p style="font-size:12px;color:#666;margin-bottom:8px">Samice KRA + Jnad2R, seřazeny dle data nar.</p>
+      <table class="krev-table">
+        <tr><th>Číslo</th><th>Subj.</th><th>Dat.nar.</th><th>Stav</th><th>Matka</th></tr>
+        ${ANIMALS.filter(a=>a.vhodnaTeleni).sort((a,b)=>a.datNar>b.datNar?1:-1).map(a=>{
+          const c=getC(a.cislo); const b=c.brezost;
+          const bs=b==='brezna'?'🤰':b==='ma_tele'?'🐄':b==='prazdna'?'⚪':b==='?'?'❓':'';
+          return `<tr><td style="font-size:11px">${a.cislo.slice(-9,-3)}</td><td style="color:${a.subjekt==='Ales'?'#1565c0':'#6a1f8a'};font-weight:700;font-size:11px">${a.subjekt==='Ales'?'A':'P'}</td><td style="font-size:11px">${a.datNar}</td><td>${bs}</td><td style="font-size:10px;color:#888">${a.matka.slice(-9,-3)||'–'}</td></tr>`;
+        }).join('')}
+      </table>
+    </div>
+    <div class="exp-card"><h3>📥 Export CSV</h3>
+      <button class="exp-btn" onclick="exportCSV()">Stáhnout CSV pro Excel</button>
+    </div>`;
+}
+
+function exportCSV(){
+  const rows=[['Číslo','Ušní číslo','Subjekt','Pohlaví','Kategorie','Plemeno','Datum nar.','Stáří','Provozovna','Matka','Potřebuje krev','Vhodná telení','Číslo vzorku','Viděno','Ušní známky','Krev','Březost','Poznámka']];
+  ANIMALS.forEach(a=>{
+    const c=getC(a.cislo);
+    const vz = c.cisloVzorku||(a.cisloVzorku?String(a.cisloVzorku):'');
+    rows.push([a.cislo,a.usniciCislo,a.subjekt,a.pohlavi,a.kategorie,a.plemeno,a.datNar,a.stari,a.provozovna,a.matka,
+      a.potrebujeKrev?'Ano':'Ne',a.vhodnaTeleni?'Ano':'Ne',vz,c.videno||'',c.znamky||'',c.krev||'',c.brezost||'',(c.poznamka||'').replace(/\n/g,' ')]);
+  });
+  const csv=rows.map(r=>r.map(x=>'"'+String(x||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download='inventura_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+document.getElementById('date-disp').textContent = new Date().toLocaleDateString('cs-CZ',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+loadLocal();
+updateStats();
+renderList();
+
+// Auto-reconnect if credentials already saved
+if (appsScriptUrl && sheetId) {
+  document.getElementById('as-url-input').value = appsScriptUrl;
+  document.getElementById('sheet-id-input').value = sheetId;
+  setSyncStatus('⏳ Obnovuji spojení se Sheets...');
+  tryLoadFromSheet().then(ok => {
+    if (ok) {
+      document.getElementById('setup-panel').style.display = 'none';
+      sheetConnected = true;
+      setSyncStatus('✅ Google Sheets připojen · ' + new Date().toLocaleTimeString('cs-CZ'));
+      updateStats(); renderList();
+    } else {
+      setSyncStatus('⚠️ Sheets nedostupné — pracuji lokálně. Data jsou bezpečně uložena.');
+    }
+  });
+} else {
+  setSyncStatus('💾 Lokální režim — nastavte Sheets výše pro sdílení v týmu');
+}
+</script>
+</body>
+</html>
